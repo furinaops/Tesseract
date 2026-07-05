@@ -1,0 +1,32 @@
+c[?7l[2J[0mSeaBIOS (version Arch Linux 1.17.0-2-2)
+
+
+iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+06FD4040+06F34040 C900
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk...
+Boot failed: could not read the boot disk
+
+Booting from Floppy...
+Boot failed: could not read the boot disk
+
+Booting from DVD/CD...
+[0;30;47mWelcome to GRUB!
+
+[01;01H[0m[2J  Booti[01;07H[01;08Hng `Tesseract Hyperkernel'
+
+Tesseract Hyperkernel v1.1.0
+One Hyperkernel to rule them all.
+Initializing memory... OK
+Initializing GDT... OK
+Initializing IDT... OK
+Initializing paging... Enabling paging... OK
+Initializing PIT timer... OK
+Spawning kernel instance 1... OK (id=1)
+Spawning kernel instance 2... OK (id=2)
+Spawning kernel instance 3... OK (id=3)
+Spawning kernel instance 4... OK (id=4)
+Enabling interrupts... OVF2 start
+OVF attempting write to 0x10010000...
+PF @0x10010000
