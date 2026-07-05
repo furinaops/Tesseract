@@ -1,0 +1,7 @@
+tesseract-kernel/tesseract.iso
+tesseract-kernel/hyperkernel.elf
+tesseract-kernel/hyperkernel.bin
+tesseract-kernel/base_kernel.elf
+tesseract-kernel/kernels/base_kernel.img
+tesseract-kernel/kernels/base_kernel_embed.o
+*.o
