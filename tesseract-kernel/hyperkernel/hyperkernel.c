@@ -213,6 +213,11 @@ void kernel_main(void) {
     timer_init();
     serial_writestring("OK\n");
 
+    terminal_writestring("Patching CR3 values... ");
+    serial_writestring("Patching CR3 values... ");
+    patch_cr3_values();
+    serial_writestring("OK\n");
+
     priority_t priorities[] = {
         PRIORITY_CRITICAL,
         PRIORITY_HIGH,

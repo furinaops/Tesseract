@@ -12,7 +12,7 @@ Booting from Floppy...
 Boot failed: could not read the boot disk
 
 Booting from DVD/CD...
-[0;30;47mWelcome to GRUB[15;15H[15;16H!
+[0;30;47mWelcome to GRUB!
 
 [01;01H[0m[2J  Booting `Tesseract Hyperkernel'
 
@@ -23,6 +23,7 @@ Initializing GDT... OK
 Initializing IDT... OK
 Initializing paging... Enabling paging... OK
 Initializing PIT timer... OK
+Patching CR3 values... OK
 Spawning kernel instance 1... OK (id=1)
 Spawning kernel instance 2... OK (id=2)
 Spawning kernel instance 3... OK (id=3)
@@ -31,10 +32,6 @@ Enabling interrupts... DOS2 start
 DOS Phase 1: rapid burst (no hlt)...
 DOS burst 0 ret=4294967295
 DOS burst 100 ret=4294967295
-DOS burst 200 ret=4294967295
-DOS burst 300 ret=4294967295
-DOS burst 400 ret=4294967295
-DOS burst 500 ret=4294967295
 DOS3 start
 DOS Phase 1: rapid burst (no hlt)...
 DOS burst 0 ret=4294967295
@@ -42,14 +39,6 @@ DOS burst 100 ret=4294967295
 DOS burst 200 ret=4294967295
 DOS burst 300 ret=4294967295
 DOS burst 400 ret=4294967295
-DOS burst 500 ret=4294967295
-DOS burst 600 ret=4294967295
-DOS burst 700 ret=4294967295
-DOS burst 800 ret=4294967295
-DOS burst 900 ret=4294967295
-DOS Phase 1 done. Burst count=1000 last_ret=4294967295
-DOS Phase 2: normal rate...
-DOS normal 0 ret=4294967295
 DOS4 start
 DOS Phase 1: rapid burst (no hlt)...
 DOS burst 0 ret=4294967295
@@ -57,14 +46,6 @@ DOS burst 100 ret=4294967295
 DOS burst 200 ret=4294967295
 DOS burst 300 ret=4294967295
 DOS burst 400 ret=4294967295
-DOS burst 500 ret=4294967295
-DOS burst 600 ret=4294967295
-DOS burst 700 ret=4294967295
-DOS burst 800 ret=4294967295
-DOS burst 900 ret=4294967295
-DOS Phase 1 done. Burst count=1000 last_ret=4294967295
-DOS Phase 2: normal rate...
-DOS normal 0 ret=4294967295
 OK
 Jumping to kernel instance...
 
@@ -75,6 +56,13 @@ DOS burst 100 ret=4294967295
 DOS burst 200 ret=4294967295
 DOS burst 300 ret=4294967295
 DOS burst 400 ret=4294967295
+DOS buDOS burst 200 ret=4294967295
+DOS burst 300 ret=4294967295
+DOS burst 400 ret=4294967295
+DOS burst 500 ret=4294967295
+DOS burst 600 ret=4294967295
+DOS burst 700 ret=4294967295
+DOS burst 800 ret=4294967295
 DOS burst 500 ret=4294967295
 DOS burst 600 ret=4294967295
 DOS burst 700 ret=4294967295
@@ -83,6 +71,7 @@ DOS burst 900 ret=4294967295
 DOS Phase 1 done. Burst count=1000 last_ret=4294967295
 DOS Phase 2: normal rate...
 DOS normal 0 ret=4294967295
+DOS burst 500 ret=4294967295
 DOS burst 600 ret=4294967295
 DOS burst 700 ret=4294967295
 DOS burst 800 ret=4294967295
@@ -90,52 +79,67 @@ DOS burst 900 ret=4294967295
 DOS Phase 1 done. Burst count=1000 last_ret=4294967295
 DOS Phase 2: normal rate...
 DOS normal 0 ret=4294967295
+rst 500 ret=4294967295
+DOS burst 600 ret=4294967295
+DOS burst 700 ret=4294967295
+DOS burst 800 ret=4294967295
+DOS burst 900 ret=4294967295
+DOS Phase 1 done. Burst count=1000 last_ret=4294967295
+DOS Phase 2: normal rate...
+DOS normal 0 ret=4294967295
+DOS burst 900 ret=4294967295
+DOS Phase 1 done. Burst count=1000 last_ret=4294967295
+DOS Phase 2: normal rate...
+DOS normal 0 ret=4294967295
 DOS normal 1 ret=4294967295
 DOS normal 2 ret=4294967295
-DOS normal 1 ret=0
+DOS normal 1 ret=4294967295
 DOS normal 2 ret=4294967295
 DOS normal 3 ret=4294967295
-DOS normal 1 ret=0
+DOS normal 1 ret=4294967295
 DOS normal 2 ret=4294967295
 DOS normal 3 ret=4294967295
-DOS normal 4 ret=4294967295
-DOS normal 1 ret=0
+DOS normal 1 ret=4294967295
 DOS normal 2 ret=4294967295
 DOS normal 3 ret=4294967295
-DOS normal 4 ret=4294967295
-DOS normal 3 ret=4294967295
+DOS normal 3 ret=0
 DOS normal 4 ret=4294967295
 DOS normal 5 ret=4294967295
-DOS normal 4 ret=4294967295
+DOS normal 4 ret=0
 DOS normal 5 ret=4294967295
 DOS normal 6 ret=4294967295
-DOS normal 5 ret=4294967295
-DOS normal 6 ret=4294967295
+DOS normal 4 ret=0
 DOS normal 5 ret=4294967295
 DOS normal 6 ret=4294967295
 DOS normal 7 ret=4294967295
-DOS normal 6 ret=0
+DOS normal 4 ret=0
+DOS normal 5 ret=4294967295
+DOS normal 6 ret=4294967295
 DOS normal 7 ret=4294967295
 DOS normal 8 ret=4294967295
-DOS normal 7 ret=0
+DOS normal 7 ret=4294967295
 DOS normal 8 ret=4294967295
 DOS normal 9 ret=4294967295
 DOS done. System stable.
-DOS normal 7 ret=0
 DOS normal 8 ret=4294967295
 DOS normal 9 ret=4294967295
-DOS normal 8 ret=0
+DOS done. System stable.
+DOS normal 6 ret=4294967295
+DOS normal 7 ret=4294967295
+DOS normal 8 ret=4294967295
 DOS normal 9 ret=4294967295
-DOS normal 9 ret=4294967295
+DOS normal 9 ret=0
 DOS done. System stable.
 DOS done. System stable.
-DOS done. System stable.
-FLAG 2
 FLAG 3
 FLAG 4
 FLAG 1
-FREEZE 2
 FREEZE 3
 FREEZE 4
 FREEZE 1
-PF @0x01010000
+FLAG 2
+EXECUTE 3
+EXECUTE 4
+EXECUTE 1
+FREEZE 2
+EXECUTE 2

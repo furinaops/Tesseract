@@ -14,7 +14,7 @@ Boot failed: could not read the boot disk
 Booting from DVD/CD...
 [0;30;47mWelcome to GRUB!
 
-[01;01H[0m[2J  Booting `Tesseract Hyperkernel'
+[01;01H[0m[2J  B[01;03H[01;04Hooting `Tesseract Hyperkernel'
 
 Tesseract Hyperkernel v1.1.0
 One Hyperkernel to rule them all.
@@ -23,6 +23,7 @@ Initializing GDT... OK
 Initializing IDT... OK
 Initializing paging... Enabling paging... OK
 Initializing PIT timer... OK
+Patching CR3 values... OK
 Spawning kernel instance 1... OK (id=1)
 Spawning kernel instance 2... OK (id=2)
 Spawning kernel instance 3... OK (id=3)
@@ -50,3 +51,7 @@ FREEZE 1
 FREEZE 2
 FREEZE 3
 FREEZE 4
+EXECUTE 1
+EXECUTE 2
+EXECUTE 3
+EXECUTE 4

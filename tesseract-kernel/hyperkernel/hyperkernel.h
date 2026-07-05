@@ -138,9 +138,11 @@ void recovery_kernel_entry(void);
 
 void interrupt_init(void);
 void timer_init(void);
+void patch_cr3_values(void);
 void paging_init(void);
 void paging_enable(void);
 uint32_t paging_create_instance_dir(uint32_t instance_phys);
+uint32_t paging_create_instance_dir_restricted(uint32_t instance_phys);
 void paging_switch(uint32_t page_dir_phys);
 uint32_t paging_get_hypervisor_dir(void);
 void hypervisor_init_gdt(void);

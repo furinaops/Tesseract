@@ -70,6 +70,34 @@ uint32_t paging_create_instance_dir(uint32_t instance_phys) {
     return (uint32_t)(uintptr_t)pd;
 }
 
+uint32_t paging_create_instance_dir_restricted(uint32_t instance_phys) {
+    uint32_t *pd = alloc_zero_page();
+    if (!pd) return 0;
+
+    uint32_t *pt0 = alloc_zero_page();
+    if (!pt0) { free_page(pd); return 0; }
+
+    pt0[184] = 0xB8000 | PAGE_PRESENT | PAGE_WRITE;
+
+    for (int i = 256; i < 272; i++) {
+        uint32_t phys = i * PAGE_SIZE;
+        pt0[i] = phys | PAGE_PRESENT | PAGE_WRITE;
+    }
+
+    pd[0] = (uint32_t)(uintptr_t)pt0 | PAGE_PRESENT | PAGE_WRITE;
+
+    uint32_t *pt4 = alloc_zero_page();
+    if (!pt4) { free_page(pt0); free_page(pd); return 0; }
+
+    uint32_t num = KERNEL_INSTANCES_SIZE / PAGE_SIZE;
+    for (uint32_t i = 0; i < num; i++)
+        pt4[i] = (instance_phys + i * PAGE_SIZE) | PAGE_PRESENT | PAGE_WRITE;
+
+    pd[4] = (uint32_t)(uintptr_t)pt4 | PAGE_PRESENT | PAGE_WRITE;
+
+    return (uint32_t)(uintptr_t)pd;
+}
+
 int paging_map_instance_page(uint32_t kernel_id, uint32_t vaddr, uint32_t phys) {
     kernel_instance_t *inst = get_instance(kernel_id);
     if (!inst) return -1;

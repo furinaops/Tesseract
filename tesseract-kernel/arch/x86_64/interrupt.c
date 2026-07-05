@@ -67,6 +67,11 @@ volatile uint32_t g_switch_esp;
 volatile uint32_t g_next_pd;
 uint32_t g_temp_stack[8] __attribute__((used));
 
+volatile uint32_t g_hk_cr3_imm_timer __attribute__((used)) = 0;
+volatile uint32_t g_hk_cr3_imm_pf __attribute__((used)) = 0;
+volatile uint32_t g_hk_cr3_imm_syscall __attribute__((used)) = 0;
+volatile uint32_t g_current_instance_cr3 __attribute__((used)) = 0;
+
 void timer_handler(void) {
     heartbeat_tick();
 
@@ -111,6 +116,7 @@ void timer_handler(void) {
     if (next && next->saved_esp != 0 && next->stage != STAGE_EXECUTED) {
         g_switch_esp = next->saved_esp;
         g_next_pd = next->page_directory;
+        g_current_instance_cr3 = next->page_directory;
     } else {
         g_switch_esp = g_saved_esp;
         g_next_pd = 0;
@@ -144,11 +150,15 @@ void page_fault_handler(void) {
     }
 
     paging_switch(paging_get_hypervisor_dir());
+}
 
-    volatile uint32_t *stack = (volatile uint32_t *)g_saved_esp;
-    stack[13] = (uint32_t)pf_recovery;
-    stack[14] = 0x08;
-    stack[15] = 0x202;
+extern uint32_t paging_get_hypervisor_dir(void);
+
+void patch_cr3_values(void) {
+    uint32_t hk_cr3 = paging_get_hypervisor_dir();
+    g_hk_cr3_imm_timer = hk_cr3;
+    g_hk_cr3_imm_pf = hk_cr3;
+    g_hk_cr3_imm_syscall = hk_cr3;
 }
 
 static void pic_remap(void) {

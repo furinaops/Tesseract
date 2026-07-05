@@ -4,6 +4,8 @@ extern int load_base_kernel(uint32_t dest_addr);
 extern uint32_t get_base_kernel_size(void);
 extern uint32_t get_base_kernel_entry(void);
 
+extern volatile uint32_t g_current_instance_cr3;
+
 static uint32_t g_next_id = 1;
 
 int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_id) {
@@ -29,7 +31,7 @@ int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_
         return -1;
     }
 
-    uint32_t pd = paging_create_instance_dir(load_addr);
+    uint32_t pd = paging_create_instance_dir_restricted(load_addr);
     if (!pd) {
         return -1;
     }
@@ -84,8 +86,10 @@ int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_
 static void free_instance_dir(uint32_t pd_phys) {
     if (!pd_phys) return;
     uint32_t *pd = (uint32_t *)(uintptr_t)pd_phys;
-    uint32_t pt4_phys = pd[4] & ~0xFFF;
-    if (pt4_phys) free_page((void *)(uintptr_t)pt4_phys);
+    for (int i = 0; i < 5; i++) {
+        uint32_t pt_phys = pd[i] & ~0xFFF;
+        if (pt_phys) free_page((void *)(uintptr_t)pt_phys);
+    }
     free_page(pd);
 }
 
@@ -159,6 +163,8 @@ int jump_to_kernel(uint32_t kernel_id) {
     if (inst->page_directory) {
         paging_switch(inst->page_directory);
     }
+
+    g_current_instance_cr3 = inst->page_directory;
 
     void (*kernel_entry)(void) = (void (*)(void))(uintptr_t)inst->entry_point;
     kernel_entry();
