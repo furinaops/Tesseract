@@ -49,10 +49,23 @@ static void serial_writehex(uint32_t n) {
     }
 }
 
+typedef struct {
+    uint32_t memory_footprint;
+    uint32_t memory_request;
+    uint32_t health_score;
+    uint32_t last_syscall_low;
+} heartbeat_payload_t;
+
 static void heartbeat(void) {
-    int ret;
-    asm volatile("int $0x80" : "=a"(ret) : "a"(5) : "memory");
-    (void)ret;
+    heartbeat_payload_t payload;
+    payload.memory_footprint = 64;
+    payload.memory_request = 64;
+    payload.health_score = 100;
+
+    asm volatile("int $0x80"
+                 :
+                 : "a"(5), "b"(&payload)
+                 : "ecx", "edx", "memory");
 }
 
 static uint32_t get_id(void) {
@@ -74,7 +87,7 @@ void kernel_main(void) {
 
     uint32_t iter = 0;
     while (1) {
-        if ((iter++ % 64) == 0) {
+        if ((iter++ % 8) == 0) {
             heartbeat();
             serial_putchar('0' + (char)my_id);
         }

@@ -75,7 +75,27 @@ void timer_handler(void) {
         kernel_instance_t *inst = get_instance((uint32_t)current);
         if (inst) {
             inst->saved_esp = g_saved_esp;
+            heartbeat_process_escalation(inst->id);
         }
+    }
+
+    if ((g_state.tick_count % 5) == 0) {
+        uint32_t total_run = 0;
+        uint32_t total_inst = 0;
+        for (int i = 0; i < MAX_KERNEL_INSTANCES; i++) {
+            if (g_state.instances[i].status == INSTANCE_RUNNING) {
+                total_run += (uint32_t)g_state.instances[i].ticks_run;
+                total_inst++;
+            }
+        }
+        if (total_inst > 0 && total_run > 0) {
+            g_state.load_factor = (total_run * 1000) / (total_inst * (uint32_t)g_state.tick_count);
+            if (g_state.load_factor > 1000) g_state.load_factor = 1000;
+        }
+    }
+
+    if ((g_state.tick_count % 10) == 0) {
+        arbitrate_memory();
     }
 
     if ((g_state.tick_count % 100) == 0) {
@@ -88,7 +108,7 @@ void timer_handler(void) {
         next = get_instance((uint32_t)next_id);
     }
 
-    if (next && next->saved_esp != 0) {
+    if (next && next->saved_esp != 0 && next->stage != STAGE_EXECUTED) {
         g_switch_esp = next->saved_esp;
         g_next_pd = next->page_directory;
     } else {

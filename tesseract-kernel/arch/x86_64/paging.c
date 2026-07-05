@@ -70,6 +70,52 @@ uint32_t paging_create_instance_dir(uint32_t instance_phys) {
     return (uint32_t)(uintptr_t)pd;
 }
 
+int paging_map_instance_page(uint32_t kernel_id, uint32_t vaddr, uint32_t phys) {
+    kernel_instance_t *inst = get_instance(kernel_id);
+    if (!inst) return -1;
+
+    uint32_t pd_phys = inst->page_directory;
+    if (!pd_phys) return -1;
+
+    uint32_t *pd = (uint32_t *)(uintptr_t)pd_phys;
+    uint32_t pde_idx = vaddr >> 22;
+
+    if (pde_idx != 4) return -1;
+
+    uint32_t pt_phys = pd[4] & ~0xFFF;
+    if (!pt_phys) return -1;
+
+    uint32_t *pt = (uint32_t *)(uintptr_t)pt_phys;
+    uint32_t pte_idx = (vaddr >> 12) & 0x3FF;
+    pt[pte_idx] = (phys & ~0xFFF) | PAGE_PRESENT | PAGE_WRITE;
+
+    asm volatile("invlpg (%0)" : : "r"(vaddr) : "memory");
+    return 0;
+}
+
+int paging_unmap_instance_page(uint32_t kernel_id, uint32_t vaddr) {
+    kernel_instance_t *inst = get_instance(kernel_id);
+    if (!inst) return -1;
+
+    uint32_t pd_phys = inst->page_directory;
+    if (!pd_phys) return -1;
+
+    uint32_t *pd = (uint32_t *)(uintptr_t)pd_phys;
+    uint32_t pde_idx = vaddr >> 22;
+
+    if (pde_idx != 4) return -1;
+
+    uint32_t pt_phys = pd[4] & ~0xFFF;
+    if (!pt_phys) return -1;
+
+    uint32_t *pt = (uint32_t *)(uintptr_t)pt_phys;
+    uint32_t pte_idx = (vaddr >> 12) & 0x3FF;
+    pt[pte_idx] = 0;
+
+    asm volatile("invlpg (%0)" : : "r"(vaddr) : "memory");
+    return 0;
+}
+
 void paging_switch(uint32_t phys) {
     if (phys) asm volatile("mov %0, %%cr3" : : "r"(phys) : "memory");
 }

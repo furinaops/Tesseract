@@ -21,6 +21,7 @@ HYPERKERNEL_OBJS := \
     arch/x86_64/paging.o \
     arch/x86_64/syscalls.o \
     arch/x86_64/hypervisor.o \
+    arch/x86_64/recovery.o \
     hyperkernel/hyperkernel.o \
     hyperkernel/instance_manager.o \
     hyperkernel/kernel_loader.o \

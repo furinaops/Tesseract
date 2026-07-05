@@ -8,12 +8,15 @@ void scheduler_init(void) {
 
 int scheduler_next(void) {
     if (g_state.num_instances == 0) return -1;
+    if (g_state.emergency_mode) return -1;
 
     uint32_t started = g_current;
     do {
         g_current = (g_current + 1) % MAX_KERNEL_INSTANCES;
-        if (g_state.instances[g_current].status == INSTANCE_RUNNING) {
-            return (int)g_state.instances[g_current].id;
+        kernel_instance_t *inst = &g_state.instances[g_current];
+        if (inst->status == INSTANCE_RUNNING &&
+            inst->stage != STAGE_EXECUTED) {
+            return (int)inst->id;
         }
     } while (g_current != started);
 

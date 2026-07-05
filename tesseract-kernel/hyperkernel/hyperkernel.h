@@ -20,7 +20,10 @@
 #define MAX_KERNEL_INSTANCES 16
 #define KERNEL_STACK_SIZE    16384
 #define HEARTBEAT_TIMEOUT_MS 3000
-#define HYPERKERNEL_VERSION  "0.1.0"
+#define HYPERKERNEL_VERSION  "1.1.0"
+
+#define MEMORY_POOL_SIZE     (16 * 1024 * 1024)
+#define MAX_MEMORY_REQUEST   (MEMORY_POOL_SIZE * 60 / 100)
 
 typedef enum {
     INSTANCE_FREE = 0,
@@ -29,6 +32,32 @@ typedef enum {
     INSTANCE_ZOMBIE,
     INSTANCE_CRASHED
 } instance_status_t;
+
+typedef enum {
+    PRIORITY_CRITICAL = 0,
+    PRIORITY_HIGH,
+    PRIORITY_NORMAL,
+    PRIORITY_IDLE
+} priority_t;
+
+typedef enum {
+    STAGE_HEALTHY = 0,
+    STAGE_FLAGGED,
+    STAGE_DEPRECATED,
+    STAGE_EXECUTED
+} escalation_stage_t;
+
+typedef struct {
+    uint32_t kernel_id;
+    uint32_t user_id;
+} kernel_identity_t;
+
+typedef struct {
+    uint32_t memory_footprint;
+    uint32_t memory_request;
+    uint32_t health_score;
+    uint32_t last_syscall_low;
+} heartbeat_payload_t;
 
 typedef struct {
     uint32_t    id;
@@ -41,6 +70,16 @@ typedef struct {
     uint64_t    last_heartbeat;
     uint32_t    ticks_run;
     uint32_t    saved_esp;
+
+    priority_t         priority;
+    escalation_stage_t stage;
+    uint32_t           user_id;
+    uint32_t           memory_requested;
+    uint32_t           memory_allocated;
+    uint32_t           health_score;
+    uint64_t           last_syscall_tick;
+    uint32_t           consecutive_misses;
+    uint32_t           last_request_tick;
 } kernel_instance_t;
 
 typedef struct {
@@ -48,6 +87,10 @@ typedef struct {
     uint32_t          num_instances;
     uint32_t          current_instance;
     uint64_t          tick_count;
+
+    uint32_t          total_memory;
+    uint32_t          load_factor;
+    int               emergency_mode;
 } hyperkernel_state_t;
 
 extern hyperkernel_state_t g_state;
@@ -69,8 +112,11 @@ void free_page(void *addr);
 void *alloc_pages(uint32_t count);
 void free_pages(void *addr, uint32_t count);
 
-int  spawn_instance(uint32_t kernel_image_id);
+int  spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_id);
 int  destroy_instance(uint32_t kernel_id);
+int  instance_freeze(uint32_t kernel_id);
+int  instance_thaw(uint32_t kernel_id);
+int  instance_execute(uint32_t kernel_id);
 kernel_instance_t *get_instance(uint32_t kernel_id);
 int  jump_to_kernel(uint32_t kernel_id);
 
@@ -80,9 +126,15 @@ int  scheduler_get_current(void);
 
 uint64_t heartbeat_get_tick(void);
 void heartbeat_tick(void);
-int  heartbeat_register(uint32_t kernel_id);
+int  heartbeat_register(uint32_t kernel_id, const heartbeat_payload_t *payload);
 int  heartbeat_check(uint32_t kernel_id);
 void heartbeat_check_all(void);
+void heartbeat_process_escalation(uint32_t kernel_id);
+uint32_t compute_heartbeat_timeout(void);
+void arbitrate_memory(void);
+int  paging_map_instance_page(uint32_t kernel_id, uint32_t vaddr, uint32_t phys);
+int  paging_unmap_instance_page(uint32_t kernel_id, uint32_t vaddr);
+void recovery_kernel_entry(void);
 
 void interrupt_init(void);
 void timer_init(void);

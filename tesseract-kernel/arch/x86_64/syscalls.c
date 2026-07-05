@@ -4,7 +4,7 @@ typedef int (*syscall_handler_t)(uint32_t, uint32_t, uint32_t);
 
 static int sys_kspawn(uint32_t a, uint32_t b, uint32_t c) {
     (void)b; (void)c;
-    return spawn_instance(a);
+    return spawn_instance(a, PRIORITY_NORMAL, 0);
 }
 
 static int sys_kdestroy(uint32_t a, uint32_t b, uint32_t c) {
@@ -14,7 +14,7 @@ static int sys_kdestroy(uint32_t a, uint32_t b, uint32_t c) {
 
 static int sys_kping(uint32_t a, uint32_t b, uint32_t c) {
     (void)b; (void)c;
-    return heartbeat_register(a);
+    return heartbeat_register(a, 0);
 }
 
 static int sys_klog(uint32_t a, uint32_t b, uint32_t c) {
@@ -28,11 +28,34 @@ static int sys_klog(uint32_t a, uint32_t b, uint32_t c) {
 }
 
 static int sys_heartbeat(uint32_t a, uint32_t b, uint32_t c) {
-    (void)a; (void)b; (void)c;
+    (void)b; (void)c;
     int current = scheduler_get_current();
     if (current < 0) return -1;
     kernel_instance_t *inst = get_instance((uint32_t)current);
     if (!inst) return -1;
+
+    uint32_t ticks_since_last = (uint32_t)(g_state.tick_count - inst->last_request_tick);
+    if (ticks_since_last < 5) {
+        return -1;
+    }
+    inst->last_request_tick = (uint32_t)g_state.tick_count;
+
+    if (a != 0) {
+        const heartbeat_payload_t *payload = (const heartbeat_payload_t *)(uintptr_t)a;
+        inst->memory_requested = payload->memory_request;
+        inst->health_score = payload->health_score;
+        inst->last_syscall_tick = g_state.tick_count;
+        inst->consecutive_misses = 0;
+        if (inst->stage == STAGE_FLAGGED) {
+            instance_thaw(inst->id);
+        }
+    } else {
+        inst->last_syscall_tick = g_state.tick_count;
+        inst->consecutive_misses = 0;
+        if (inst->stage == STAGE_FLAGGED) {
+            instance_thaw(inst->id);
+        }
+    }
     inst->last_heartbeat = g_state.tick_count;
     return 0;
 }

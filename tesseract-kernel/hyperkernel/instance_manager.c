@@ -6,7 +6,7 @@ extern uint32_t get_base_kernel_entry(void);
 
 static uint32_t g_next_id = 1;
 
-int spawn_instance(uint32_t kernel_image_id) {
+int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_id) {
     (void)kernel_image_id;
 
     if (g_state.num_instances >= MAX_KERNEL_INSTANCES) {
@@ -45,6 +45,16 @@ int spawn_instance(uint32_t kernel_image_id) {
     inst->last_heartbeat = g_state.tick_count;
     inst->ticks_run      = 0;
 
+    inst->priority          = priority;
+    inst->stage             = STAGE_HEALTHY;
+    inst->user_id           = user_id;
+    inst->memory_requested  = KERNEL_INSTANCES_SIZE;
+    inst->memory_allocated  = KERNEL_INSTANCES_SIZE;
+    inst->health_score      = 100;
+    inst->last_syscall_tick = g_state.tick_count;
+    inst->consecutive_misses = 0;
+    inst->last_request_tick = 0;
+
     uint32_t id_addr_phys = load_addr + 0xFFC0;
     *(uint32_t *)(uintptr_t)id_addr_phys = inst->id;
 
@@ -77,6 +87,42 @@ static void free_instance_dir(uint32_t pd_phys) {
     uint32_t pt4_phys = pd[4] & ~0xFFF;
     if (pt4_phys) free_page((void *)(uintptr_t)pt4_phys);
     free_page(pd);
+}
+
+int instance_freeze(uint32_t kernel_id) {
+    kernel_instance_t *inst = get_instance(kernel_id);
+    if (!inst) return -1;
+    inst->stage = STAGE_DEPRECATED;
+    inst->memory_allocated = 0;
+    return 0;
+}
+
+int instance_thaw(uint32_t kernel_id) {
+    kernel_instance_t *inst = get_instance(kernel_id);
+    if (!inst) return -1;
+    inst->stage = STAGE_HEALTHY;
+    inst->memory_allocated = KERNEL_INSTANCES_SIZE;
+    inst->consecutive_misses = 0;
+    return 0;
+}
+
+int instance_execute(uint32_t kernel_id) {
+    kernel_instance_t *inst = get_instance(kernel_id);
+    if (!inst) return -1;
+    inst->stage = STAGE_EXECUTED;
+    inst->status = INSTANCE_ZOMBIE;
+
+    uint32_t base = inst->memory_base;
+    uint32_t *ptr = (uint32_t *)(uintptr_t)base;
+    for (uint32_t i = 0; i < KERNEL_INSTANCES_SIZE / 4; i++) {
+        ptr[i] = 0;
+    }
+
+    free_instance_dir(inst->page_directory);
+    inst->page_directory = 0;
+    inst->memory_allocated = 0;
+    g_state.num_instances--;
+    return 0;
 }
 
 int destroy_instance(uint32_t kernel_id) {

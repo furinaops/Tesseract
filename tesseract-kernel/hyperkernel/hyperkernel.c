@@ -213,6 +213,14 @@ void kernel_main(void) {
     timer_init();
     serial_writestring("OK\n");
 
+    priority_t priorities[] = {
+        PRIORITY_CRITICAL,
+        PRIORITY_HIGH,
+        PRIORITY_NORMAL,
+        PRIORITY_IDLE
+    };
+    uint32_t user_ids[] = { 1, 2, 3, 4 };
+
     int kids[4];
     for (int i = 0; i < 4; i++) {
         terminal_writestring("Spawning kernel instance ");
@@ -221,7 +229,7 @@ void kernel_main(void) {
         serial_writestring("Spawning kernel instance ");
         serial_writedec((uint32_t)(i + 1));
         serial_writestring("... ");
-        int kid = spawn_instance(0);
+        int kid = spawn_instance(0, priorities[i], user_ids[i]);
         if (kid < 0) {
             terminal_writestring("FAILED\n");
             serial_writestring("FAILED\n");
@@ -235,6 +243,10 @@ void kernel_main(void) {
         serial_writedec((uint32_t)kid);
         serial_writestring(")\n");
     }
+
+    g_state.total_memory = MEMORY_POOL_SIZE;
+    g_state.load_factor = 0;
+    g_state.emergency_mode = 0;
 
     terminal_writestring("Enabling interrupts... ");
     serial_writestring("Enabling interrupts... ");

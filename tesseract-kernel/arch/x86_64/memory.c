@@ -1,9 +1,9 @@
 #include "hyperkernel.h"
 
 #define PAGE_SIZE      4096
-#define MAX_PAGES      1024
+#define MAX_PAGES      4096
 #define MEMORY_START   0x200000
-#define MEMORY_END     0x800000
+#define MEMORY_END     (MEMORY_START + MAX_PAGES * PAGE_SIZE)
 
 static uint8_t g_page_bitmap[MAX_PAGES / 8];
 static uint32_t g_next_free_page;
