@@ -171,7 +171,11 @@ static void serial_writedec(uint32_t n) {
     serial_writestring(&buf[i]);
 }
 
+extern volatile uint32_t g_hk_stack_canary;
+#define STACK_CANARY_VALUE 0xDEADBEEF
+
 void kernel_main(void) {
+    g_hk_stack_canary = STACK_CANARY_VALUE;
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_CYAN, VGA_BLACK));
     terminal_writestring("Tesseract Hyperkernel v");

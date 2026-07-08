@@ -14,8 +14,22 @@ struct gdt_ptr {
     uint32_t base;
 } __attribute__((packed));
 
-static struct gdt_entry g_gdt[5];
+struct __attribute__((packed)) tss {
+    uint16_t link, reserved0;
+    uint32_t esp0;
+    uint16_t ss0, reserved1;
+    uint32_t esp1;
+    uint16_t ss1, reserved2;
+    uint32_t esp2;
+    uint16_t ss2, reserved3;
+    uint32_t cr3, eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
+    uint32_t es, cs, ss, ds, fs, gs, ldt;
+    uint16_t trap, iomap_base;
+};
+
+static struct gdt_entry g_gdt[6];
 static struct gdt_ptr   g_gdt_ptr;
+static struct tss       g_tss;
 
 static void gdt_set_gate(int idx, uint32_t base, uint32_t limit, uint8_t access, uint8_t flags) {
     g_gdt[idx].limit_low  = limit & 0xFFFF;
@@ -32,11 +46,19 @@ void hypervisor_init_gdt(void) {
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
     gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
+    gdt_set_gate(5, (uint32_t)(uintptr_t)&g_tss, sizeof(g_tss) - 1, 0x89, 0x40);
 
     g_gdt_ptr.limit = sizeof(g_gdt) - 1;
     g_gdt_ptr.base  = (uint32_t)(uintptr_t)&g_gdt;
 
     asm volatile("lgdt (%0)" : : "r" (&g_gdt_ptr));
+
+    extern uint32_t g_hk_stack_top;
+    g_tss.ss0  = 0x10;
+    g_tss.esp0 = (uint32_t)(uintptr_t)&g_hk_stack_top;
+
+    asm volatile("ltr %0" : : "r"((uint16_t)0x28));
+
     asm volatile(
         "mov $0x10, %%ax\n"
         "mov %%ax, %%ds\n"

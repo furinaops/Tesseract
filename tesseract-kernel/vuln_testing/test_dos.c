@@ -11,8 +11,6 @@
 
 #include <stdint.h>
 
-#define SERIAL_PORT 0x3F8
-
 typedef struct {
     uint32_t memory_footprint;
     uint32_t memory_request;
@@ -20,47 +18,23 @@ typedef struct {
     uint32_t last_syscall_low;
 } heartbeat_payload_t;
 
-static void outb(uint16_t port, uint8_t val) {
-    asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
+static void sput(char c) {
+    asm volatile("int $0x80" : : "a"(6), "b"((uint32_t)c) : "ecx", "edx", "memory");
 }
-
-static uint8_t inb(uint16_t port) {
-    uint8_t ret;
-    asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
-    return ret;
+static void swrite(const char *str) {
+    for (; *str; str++) { if (*str == '\n') sput('\r'); sput(*str); }
 }
-
-static void serial_putchar(char c) {
-    while ((inb(SERIAL_PORT + 5) & 0x20) == 0);
-    outb(SERIAL_PORT, (uint8_t)c);
-}
-
-static void serial_writestring(const char *str) {
-    for (; *str; str++) {
-        if (*str == '\n') serial_putchar('\r');
-        serial_putchar(*str);
-    }
-}
-
-static void serial_writedec(uint32_t n) {
-    char buf[12];
-    int i = 11;
-    buf[11] = '\0';
-    if (n == 0) { serial_putchar('0'); return; }
-    while (n > 0 && i > 0) {
-        i--;
-        buf[i] = '0' + (n % 10);
-        n /= 10;
-    }
-    serial_writestring(&buf[i]);
+static void swritedec(uint32_t n) {
+    char buf[12]; int i = 11; buf[11] = '\0';
+    if (n == 0) { sput('0'); return; }
+    while (n > 0 && i > 0) { i--; buf[i] = '0' + (n % 10); n /= 10; }
+    swrite(&buf[i]);
 }
 
 void kernel_main(void) {
-    uint32_t my_id = *(volatile uint32_t *)0x100FFC0;
+    uint32_t my_id = *(volatile uint32_t *)0x100FFB0;
 
-    serial_writestring("DOS");
-    serial_writedec(my_id);
-    serial_writestring(" start\n");
+    swrite("DOS"); swritedec(my_id); swrite(" start\n");
 
     heartbeat_payload_t payload;
     payload.memory_footprint = 64;
@@ -70,8 +44,7 @@ void kernel_main(void) {
     uint32_t burst_count = 0;
     int last_result = 0;
 
-    /* Phase 1: Rapid burst — syscall every iteration, no hlt */
-    serial_writestring("DOS Phase 1: rapid burst (no hlt)...\n");
+    swrite("DOS Phase 1: rapid burst...\n");
 
     for (int i = 0; i < 1000; i++) {
         int result;
@@ -84,22 +57,17 @@ void kernel_main(void) {
 
         /* Read result every 100 iterations to reduce serial noise */
         if ((i % 100) == 0) {
-            serial_writestring("DOS burst ");
-            serial_writedec(i);
-            serial_writestring(" ret=");
-            serial_writedec((uint32_t)(int32_t)result);
-            serial_writestring("\n");
+            swrite("DOS burst "); swritedec(i);
+            swrite(" ret="); swritedec((uint32_t)(int32_t)result);
+            swrite("\n");
         }
     }
 
-    serial_writestring("DOS Phase 1 done. Burst count=");
-    serial_writedec(burst_count);
-    serial_writestring(" last_ret=");
-    serial_writedec((uint32_t)(int32_t)last_result);
-    serial_writestring("\n");
+    swrite("DOS Phase 1 done. Burst count="); swritedec(burst_count);
+    swrite(" last_ret="); swritedec((uint32_t)(int32_t)last_result);
+    swrite("\n");
 
-    /* Phase 2: Slow rate — ensure normal syscalls still work */
-    serial_writestring("DOS Phase 2: normal rate...\n");
+    swrite("DOS Phase 2: normal rate...\n");
 
     for (int i = 0; i < 10; i++) {
         int result;
@@ -108,17 +76,15 @@ void kernel_main(void) {
                      : "a"(5), "b"(&payload)
                      : "ecx", "edx", "memory");
 
-        serial_writestring("DOS normal ");
-        serial_writedec(i);
-        serial_writestring(" ret=");
-        serial_writedec((uint32_t)(int32_t)result);
-        serial_writestring("\n");
+        swrite("DOS normal "); swritedec(i);
+        swrite(" ret="); swritedec((uint32_t)(int32_t)result);
+        swrite("\n");
 
         /* ~200ms delay via busy-wait (rough) */
         for (volatile uint32_t d = 0; d < 500000; d++);
     }
 
-    serial_writestring("DOS done. System stable.\n");
+    swrite("DOS done. System stable.\n");
 
-    for (;;) asm volatile("hlt");
+    for (;;) { for (volatile int _i = 0; _i < 5000000; _i++); }
 }

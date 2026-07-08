@@ -12,12 +12,18 @@
 .extern page_fault_handler
 .extern syscall_handler_c
 .extern pf_recovery
+.extern gp_fault_handler
 
 .section .bss
 .align 16
+.globl g_hk_stack_canary
+g_hk_stack_canary:
+    .space 4
 g_hk_stack_bottom:
-    .space 1024
+    .space 4092
+.globl g_hk_stack_top
 g_hk_stack_top:
+.globl g_hk_payload_copy
 g_hk_payload_copy:
     .space 16
 
@@ -38,13 +44,13 @@ timer_wrapper:
     push %fs
     push %gs
     mov %esp, %ebx
-    lea g_hk_stack_top, %esp
+    lea g_temp_stack + 256, %esp
     movl (g_hk_cr3_imm_timer), %eax
     mov %eax, %cr3
     mov %ebx, g_saved_esp
+
     cld
     call timer_handler
-    lea g_temp_stack + 32, %esp
     movl g_next_pd, %eax
     movl g_switch_esp, %ecx
     test %eax, %eax
@@ -85,6 +91,25 @@ pf_recovery:
     hlt
     jmp 1b
 
+.globl gp_fault_wrapper
+gp_fault_wrapper:
+    pushal
+    push %ds
+    push %es
+    push %fs
+    push %gs
+    mov %esp, %ebx
+    lea g_hk_stack_top, %esp
+    movl (g_hk_cr3_imm_pf), %eax
+    mov %eax, %cr3
+    mov %ebx, g_saved_esp
+    cld
+    call gp_fault_handler
+    pushl $0x202
+    pushl $0x08
+    pushl $pf_recovery
+    iret
+
 .globl syscall_wrapper
 syscall_wrapper:
     pushal
@@ -111,10 +136,10 @@ syscall_wrapper:
     mov 32(%ebx), %esi
     mov 40(%ebx), %ecx
     mov 36(%ebx), %edx
-    lea g_hk_stack_top, %esp
     movl (g_hk_cr3_imm_syscall), %edi
     mov %edi, %cr3
     mov %ebx, g_saved_esp
+    lea g_temp_stack + 256, %esp
     push %edx
     push %ecx
     push %esi

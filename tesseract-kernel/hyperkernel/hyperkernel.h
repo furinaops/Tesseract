@@ -80,6 +80,8 @@ typedef struct {
     uint64_t           last_syscall_tick;
     uint32_t           consecutive_misses;
     uint32_t           last_request_tick;
+    uint32_t           last_spawn_tick;
+    uint32_t           pt4_phys;
 } kernel_instance_t;
 
 typedef struct {
@@ -118,7 +120,7 @@ int  instance_freeze(uint32_t kernel_id);
 int  instance_thaw(uint32_t kernel_id);
 int  instance_execute(uint32_t kernel_id);
 kernel_instance_t *get_instance(uint32_t kernel_id);
-int  jump_to_kernel(uint32_t kernel_id);
+void jump_to_kernel(uint32_t kernel_id);
 
 void scheduler_init(void);
 int  scheduler_next(void);
@@ -145,6 +147,8 @@ uint32_t paging_create_instance_dir(uint32_t instance_phys);
 uint32_t paging_create_instance_dir_restricted(uint32_t instance_phys);
 void paging_switch(uint32_t page_dir_phys);
 uint32_t paging_get_hypervisor_dir(void);
+void paging_set_hk_pd4(uint32_t instance_pd_phys);
+void paging_reset_hk_pd4(void);
 void hypervisor_init_gdt(void);
 int syscall_handler_c(uint32_t num, uint32_t a, uint32_t b, uint32_t c);
 

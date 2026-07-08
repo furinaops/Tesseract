@@ -18,43 +18,24 @@
 
 #define VGA_ADDR    ((volatile uint16_t *)0xB8000)
 #define VGA_WIDTH   80
-#define SERIAL_PORT 0x3F8
 
-static void outb(uint16_t port, uint8_t val) {
-    asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
+static void sput(char c) {
+    asm volatile("int $0x80" : : "a"(6), "b"((uint32_t)c) : "ecx", "edx", "memory");
 }
-
-static uint8_t inb(uint16_t port) {
-    uint8_t ret;
-    asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
-    return ret;
+static void swrite(const char *str) {
+    for (; *str; str++) { if (*str == '\n') sput('\r'); sput(*str); }
 }
-
-static void serial_putchar(char c) {
-    while ((inb(SERIAL_PORT + 5) & 0x20) == 0);
-    outb(SERIAL_PORT, (uint8_t)c);
-}
-
-static void serial_writestring(const char *str) {
-    for (; *str; str++) {
-        if (*str == '\n') serial_putchar('\r');
-        serial_putchar(*str);
-    }
-}
-
-static void serial_writehex(uint32_t n) {
+static void swritehex(uint32_t n) {
     for (int i = 7; i >= 0; i--) {
         char nib = (n >> (i * 4)) & 0xF;
-        serial_putchar(nib < 10 ? '0' + nib : 'A' + nib - 10);
+        sput(nib < 10 ? '0' + nib : 'A' + nib - 10);
     }
 }
 
 void kernel_main(void) {
-    uint32_t my_id = *(volatile uint32_t *)0x100FFC0;
+    uint32_t my_id = *(volatile uint32_t *)0x100FFB0;
 
-    serial_writestring("DCW");
-    serial_writehex(my_id);
-    serial_writestring(" start\n");
+    swrite("DCW"); swritehex(my_id); swrite(" start\n");
 
     /*
      * Calculate the VGA row for another instance (victim).
@@ -69,14 +50,14 @@ void kernel_main(void) {
     int victim_row = (victim_id - 1) * 6;
     int offset = victim_row * VGA_WIDTH;
 
-    serial_writestring("DCW overwriting victim VGA row via identity map...\n");
+    swrite("DCW overwriting victim VGA row via identity map...\n");
 
     const char *marker = "DIRTYCOW";
     for (int i = 0; marker[i]; i++) {
         VGA_ADDR[offset + i] = (uint16_t)marker[i] | (uint16_t)0x04 << 8;
     }
 
-    serial_writestring("DCW write completed. Isolation FAILED (shared PDE 0-3).\n");
+    swrite("DCW write completed. Isolation FAILED (shared PDE 0-3).\n");
 
-    for (;;) asm volatile("hlt");
+    for (;;) { for (volatile int _i = 0; _i < 5000000; _i++); }
 }

@@ -42,8 +42,12 @@ int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_
     inst->entry_point   = get_base_kernel_entry();
     inst->memory_base   = load_addr;
     inst->memory_size   = KERNEL_INSTANCES_SIZE;
-    inst->stack_pointer = load_addr + KERNEL_INSTANCES_STRIDE - 16;
+    inst->stack_pointer = KERNEL_INSTANCES_BASE + KERNEL_INSTANCES_STRIDE - 16;
     inst->page_directory = pd;
+    {
+        uint32_t *pd_ptr = (uint32_t *)(uintptr_t)pd;
+        inst->pt4_phys = pd_ptr[4] & ~0xFFF;
+    }
     inst->last_heartbeat = g_state.tick_count;
     inst->ticks_run      = 0;
 
@@ -56,16 +60,17 @@ int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_
     inst->last_syscall_tick = g_state.tick_count;
     inst->consecutive_misses = 0;
     inst->last_request_tick = 0;
+    inst->last_spawn_tick = 0;
 
-    uint32_t id_addr_phys = load_addr + 0xFFC0;
-    *(uint32_t *)(uintptr_t)id_addr_phys = inst->id;
-
-    uint32_t frame_phys = load_addr + KERNEL_INSTANCES_STRIDE - 60;
+    uint32_t frame_phys = load_addr + KERNEL_INSTANCES_STRIDE - 68;
     uint32_t *frame = (uint32_t *)(uintptr_t)frame_phys;
-    frame[0]  = 0x10;   // gs
-    frame[1]  = 0x10;   // fs
-    frame[2]  = 0x10;   // es
-    frame[3]  = 0x10;   // ds
+
+    uint32_t id_addr_phys = load_addr + 0xFFB0;
+    *(uint32_t *)(uintptr_t)id_addr_phys = inst->id;
+    frame[0]  = 0x23;   // gs
+    frame[1]  = 0x23;   // fs
+    frame[2]  = 0x23;   // es
+    frame[3]  = 0x23;   // ds
     frame[4]  = 0;      // edi
     frame[5]  = 0;      // esi
     frame[6]  = 0;      // ebp
@@ -75,9 +80,11 @@ int spawn_instance(uint32_t kernel_image_id, priority_t priority, uint32_t user_
     frame[10] = 0;      // ecx
     frame[11] = 0;      // eax
     frame[12] = inst->entry_point;  // EIP
-    frame[13] = 0x08;               // CS
+    frame[13] = 0x1B;               // CS (ring 3)
     frame[14] = 0x202;              // EFLAGS
-    inst->saved_esp = 0x1000000 + KERNEL_INSTANCES_STRIDE - 60;
+    frame[15] = KERNEL_INSTANCES_BASE + KERNEL_INSTANCES_STRIDE - 4;  // ESP (ring 3)
+    frame[16] = 0x23;               // SS (ring 3 DS)
+    inst->saved_esp = KERNEL_INSTANCES_BASE + KERNEL_INSTANCES_STRIDE - 68;
 
     g_state.num_instances++;
     return (int)inst->id;
@@ -154,9 +161,9 @@ kernel_instance_t *get_instance(uint32_t kernel_id) {
     return 0;
 }
 
-int jump_to_kernel(uint32_t kernel_id) {
+void jump_to_kernel(uint32_t kernel_id) {
     kernel_instance_t *inst = get_instance(kernel_id);
-    if (!inst) return -1;
+    if (!inst) return;
 
     inst->status = INSTANCE_RUNNING;
 
@@ -166,8 +173,16 @@ int jump_to_kernel(uint32_t kernel_id) {
 
     g_current_instance_cr3 = inst->page_directory;
 
-    void (*kernel_entry)(void) = (void (*)(void))(uintptr_t)inst->entry_point;
-    kernel_entry();
-
-    return 0;
+    asm volatile(
+        "pushl %[ss]\n"
+        "pushl %[esp]\n"
+        "pushl $0x202\n"
+        "pushl %[cs]\n"
+        "pushl %[eip]\n"
+        "iret\n"
+        : : [ss]  "r"((uint32_t)0x23),
+            [esp] "r"(inst->stack_pointer),
+            [cs]  "r"((uint32_t)0x1B),
+            [eip] "r"(inst->entry_point)
+    );
 }
