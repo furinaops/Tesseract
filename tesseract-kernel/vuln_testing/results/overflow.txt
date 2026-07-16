@@ -28,18 +28,10 @@ Spawning kernel instance 1... OK (id=1)
 Spawning kernel instance 2... OK (id=2)
 Spawning kernel instance 3... OK (id=3)
 Spawning kernel instance 4... OK (id=4)
-Enabling interrupts... OVF2 start
-OVF attempting write to 0x10010000...
-PF @0x10010000
-OVF3 start
-OVF attempting write to 0x10010000...
-PF @0x10010000
-OVF4 start
-OVF attempting write to 0x10010000...
-PF @0x10010000
+Enabling interrupts... O2 OPF 10010000 e=0010A0D8
+O3 OPF 10010000 e=0010A0D8
+O4 OPF 10010000 e=0010A0D8
 OK
 Jumping to kernel instance...
 
-OVF1 start
-OVF attempting write to 0x10010000...
-PF @0x10010000
+O1 OPF 10010000 e=0010A0D8

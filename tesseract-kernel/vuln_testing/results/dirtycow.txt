@@ -14,7 +14,7 @@ Boot failed: could not read the boot disk
 Booting from DVD/CD...
 [0;30;47mWelcome to GRUB!
 
-[01;01H[0m[2J  B[01;03H[01;04Hooting `Tesseract Hyperkernel'
+[01;01H[0m[2J  Booting `Tesseract Hyperkernel'
 
 Tesseract Hyperkernel v1.1.0
 One Hyperkernel to rule them all.
@@ -28,30 +28,7 @@ Spawning kernel instance 1... OK (id=1)
 Spawning kernel instance 2... OK (id=2)
 Spawning kernel instance 3... OK (id=3)
 Spawning kernel instance 4... OK (id=4)
-Enabling interrupts... DCW00000002 start
-DCW overwriting victim VGA row via identity map...
-DCW write completed. Isolation FAILED (shared PDE 0-3).
-DCW00000003 start
-DCW overwriting victim VGA row via identity map...
-DCW write completed. Isolation FAILED (shared PDE 0-3).
-DCW00000004 start
-DCW overwriting victim VGA row via identity map...
-DCW write completed. Isolation FAILED (shared PDE 0-3).
-OK
+Enabling interrupts... D0 DDD0 DDD0 DDOK
 Jumping to kernel instance...
 
-DCW00000001 start
-DCW overwriting victim VGA row via identity map...
-DCW write completed. Isolation FAILED (shared PDE 0-3).
-FLAG 1
-FLAG 2
-FLAG 3
-FLAG 4
-FREEZE 1
-FREEZE 2
-FREEZE 3
-FREEZE 4
-EXECUTE 1
-EXECUTE 2
-EXECUTE 3
-EXECUTE 4
+D0 DD

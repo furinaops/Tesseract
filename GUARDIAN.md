@@ -1,7 +1,3 @@
-Here is the complete, detailed MVP specification for the **Adaptive Heartbeat & Memory Governance System** — now fully embedded as a core subsystem of the Tesseract Hyperkernel.
-
----
-
 ## 1. The Core Idea: The Hyperkernel as the "Sovereign" System
 
 The Tesseract Hyperkernel is no longer just a hypervisor. It is a **sovereign operating system** for other kernels. It does not delegate its authority to a separate "Guardian" process. Instead, it integrates the heartbeat, memory, and execution logic directly into its main scheduling loop. 
