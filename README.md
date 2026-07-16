@@ -1,7 +1,7 @@
 # Tesseract — The Meta-Kernel
 
 <p align="center">
-  <video src="./demo.mp4" width="640" controls></video>
+  <a href="./demo.mp4">▶️ Click to play demo video</a>
   <br>
   <em>Demo of my kernel with DOOM</em>
 </p>
