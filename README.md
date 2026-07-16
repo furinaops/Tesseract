@@ -159,13 +159,13 @@ full details.
 
 | Phase | Milestones | Status |
 |---|---|---|
-| **0: Foundation** | Cross‑compiler, Makefile, QEMU, bootloader, terminal output|
-| **1: Single Spawn** | Hyperkernel loads and jumps to a base kernel|
-| **2: Dual Spawn** | Two kernels in memory, context switching|
-| **3: Memory Isolation** | Separate page tables, fault on cross‑access|
-| **4: Heartbeat** | `kping`, zombie detection, auto‑kill|
-| **5: Syscalls** | Full syscall table, keyboard forwarding|
-| **6: Userland** | Filesystem, shell, multi‑user login|
+| **0: Foundation** | Cross‑compiler, Makefile, QEMU, bootloader, terminal output | Completed |
+| **1: Single Spawn** | Hyperkernel loads and jumps to a base kernel | In progress |
+| **2: Dual Spawn** | Two kernels in memory, context switching | To be done |
+| **3: Memory Isolation** | Separate page tables, fault on cross‑access | To be done |
+| **4: Heartbeat** | `kping`, zombie detection, auto‑kill | To be done |
+| **5: Syscalls** | Full syscall table, keyboard forwarding | To be done |
+| **6: Userland** | Filesystem, shell, multi‑user login | To be done |
 
 The full roadmap with 23 milestones (M0–M23) is in [`project.md`](project.md).
 
